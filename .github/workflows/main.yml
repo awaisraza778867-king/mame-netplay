@@ -1,16 +1,30 @@
-name: Netplay Build
+name: Build MAME 0.139u1 Netplay
 on: [push]
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - uses: actions/checkout@v3
 
-      - name: Preparing Files
-        run: |
-          echo "Starting Netplay Integration..."
-          echo "Processing net_sync.cpp and input_fix.cpp"
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-make
 
-      - name: Finalizing
-        run: echo "Build script is now active and green!"
+      - name: Quick Compile
+        shell: msys2 {0}
+        run: |
+          # Sirf zaroori files check karne k liye simple compilation
+          g++ net_sync.cpp input_fix.cpp -o MAME_Netplay_Stub.exe
+          echo "Basic Netplay Bridge Built!"
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v3
+        with:
+          name: MAME-Bridge
+          path: ./*.exe
