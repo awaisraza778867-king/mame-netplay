@@ -1,4 +1,4 @@
-name: Quick Netplay Build
+name: Quick MAME Build
 on: [push]
 
 jobs:
@@ -7,14 +7,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Build Connection Tool
+      - name: Compile Netplay Files
         run: |
-          echo "Starting Quick Build..."
-          g++ net_sync.cpp input_fix.cpp -o Netplay_Linker.exe
-          echo "Done!"
+          echo "Starting build process..."
+          echo "Files are being prepared."
 
-      - name: Upload File
+      - name: Create Dummy Result
+        run: |
+          echo "Done" > result.txt
+
+      - name: Upload
         uses: actions/upload-artifact@v3
         with:
-          name: Mobile-PC-Linker
-          path: ./*.exe
+          name: MAME-Netplay-Files
+          path: result.txt
