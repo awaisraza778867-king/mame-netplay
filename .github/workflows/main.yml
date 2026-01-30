@@ -3,7 +3,7 @@ on: [push]
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - uses: actions/checkout@v3
 
@@ -15,32 +15,23 @@ jobs:
           install: >-
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-make
-            mingw-w64-x86_64-python
-            mingw-w64-x86_64-SDL2
             zip
             unzip
 
-      - name: Download MAME 0139 Source
+      - name: Build Tiny MAME
         shell: msys2 {0}
         run: |
           curl -L -o mame0139.zip https://github.com/mamedev/mame/archive/refs/tags/mame0139.zip
           unzip -q mame0139.zip
           mv mame-mame0139 source
-
-      - name: Inject Multiplayer Code
-        shell: msys2 {0}
-        run: |
           cp net_sync.cpp source/src/osd/windows/
           cp input_fix.cpp source/src/emu/
-
-      - name: Compile MAME (Tiny Build)
-        shell: msys2 {0}
-        run: |
           cd source
-          make -j2 SUBTARGET=tiny
+          # Fast build for testing
+          make -j2 SUBTARGET=tiny NOWERROR=1
 
-      - name: Upload Final EXE
+      - name: Upload Result
         uses: actions/upload-artifact@v3
         with:
-          name: MAME-Netplay-Package
+          name: MAME-EXE
           path: source/*.exe
