@@ -1,37 +1,20 @@
-name: Build MAME 0.139u1 Netplay
+name: Quick Netplay Build
 on: [push]
 
 jobs:
   build:
-    runs-on: windows-2019
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Setup MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: >-
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-make
-            zip
-            unzip
-
-      - name: Build Tiny MAME
-        shell: msys2 {0}
+      - name: Build Connection Tool
         run: |
-          curl -L -o mame0139.zip https://github.com/mamedev/mame/archive/refs/tags/mame0139.zip
-          unzip -q mame0139.zip
-          mv mame-mame0139 source
-          cp net_sync.cpp source/src/osd/windows/
-          cp input_fix.cpp source/src/emu/
-          cd source
-          # Fast build for testing
-          make -j2 SUBTARGET=tiny NOWERROR=1
+          echo "Starting Quick Build..."
+          g++ net_sync.cpp input_fix.cpp -o Netplay_Linker.exe
+          echo "Done!"
 
-      - name: Upload Result
+      - name: Upload File
         uses: actions/upload-artifact@v3
         with:
-          name: MAME-EXE
-          path: source/*.exe
+          name: Mobile-PC-Linker
+          path: ./*.exe
