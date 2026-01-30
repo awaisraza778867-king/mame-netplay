@@ -7,10 +7,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Setup Compiler
+      - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
-          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-make zip
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-make
+            mingw-w64-x86_64-python
+            mingw-w64-x86_64-SDL2
+            zip
+            unzip
 
       - name: Download MAME 0139 Source
         shell: msys2 {0}
@@ -24,16 +32,15 @@ jobs:
         run: |
           cp net_sync.cpp source/src/osd/windows/
           cp input_fix.cpp source/src/emu/
-          echo "Netplay files injected for 4-player support!"
 
-      - name: Compile MAME (This takes time)
+      - name: Compile MAME (Tiny Build)
         shell: msys2 {0}
         run: |
           cd source
-          make -j2
+          make -j2 SUBTARGET=tiny
 
       - name: Upload Final EXE
         uses: actions/upload-artifact@v3
         with:
-          name: MAME-0.139u1-Netplay-EXE
+          name: MAME-Netplay-Package
           path: source/*.exe
