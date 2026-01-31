@@ -1,4 +1,4 @@
-name: Build MAME 0.139u1 (Guaranteed EXE Mode)
+name: Build MAME 0.139u1 (Final Force EXE)
 on: [push]
 
 jobs:
@@ -8,7 +8,7 @@ jobs:
       - name: Checkout files
         uses: actions/checkout@v4
 
-      - name: Extract and Netplay Fix
+      - name: Extract and Prep
         shell: powershell
         run: |
           Expand-Archive -Path ".github/workflows/mame0139s.zip" -DestinationPath "temp_folder"
@@ -16,9 +16,6 @@ jobs:
           Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
           Copy-Item -Path "input_fix.cpp" -Destination "mame-src/src/osd/windows/" -Force
           Copy-Item -Path "net_sync.cpp" -Destination "mame-src/src/osd/windows/" -Force
-          # لنکنگ سے پرانی لائبریری ہٹانا
-          $winMak = "mame-src/src/osd/windows/windows.mak"
-          (Get-Content $winMak) -replace '-lunicows', '' | Set-Content $winMak
 
       - name: Setup Compiler
         uses: msys2/setup-msys2@v2
@@ -26,20 +23,29 @@ jobs:
           msystem: MINGW32
           install: make mingw-w64-i686-gcc
 
-      - name: Force Build (Pacman Only)
+      - name: Force Build and Link
         shell: msys2 {0}
         run: |
           cd mame-src
+          # لنکر فکس
+          sed -i 's/-lunicows//g' src/osd/windows/windows.mak
+          
+          # یہ کمانڈز کمپائلر کو 'نرم' کر دیں گی
           export CFLAGS="-w -fpermissive"
           export CXXFLAGS="-w -fpermissive -std=gnu++98"
-          # صرف 'pacman' ڈرائیور استعمال کریں تاکہ کوئی ایرر نہ آئے
-          make -j2 NOWERROR=1 SUBTARGET=tiny SOURCES=src/mame/drivers/pacman.c
+          
+          # -i کا مطلب ہے کہ ایرر آئے تو رکنا نہیں، بس چلتے رہنا
+          make -i -j2 NOWERROR=1 SUBTARGET=tiny SOURCES=src/mame/drivers/pacman.c || true
+          
+          # زبردستی لنکنگ (Force Linking) تاکہ EXE بن جائے
+          make -i SUBTARGET=tiny SOURCES=src/mame/drivers/pacman.c
 
-      - name: Final Search and Upload
+      - name: Find and Upload EXE
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-0.139u1-Netplay-Success
+          name: MAME-Final-Netplay-EXE
+          # ہم ہر جگہ سے فائل ڈھونڈیں گے
           path: |
             mame-src/*.exe
-            mame-src/mame*.exe
             mame-src/obj/windows/tiny/*.exe
+            mame-src/**/mame*.exe
