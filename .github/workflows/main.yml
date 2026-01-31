@@ -11,7 +11,6 @@ jobs:
       - name: Extract All Zips
         shell: powershell
         run: |
-          # زپ فائلیں کھولنا
           Expand-Archive -Path ".github/workflows/mame0139s.zip" -DestinationPath "temp_folder"
           $innerZip = Get-ChildItem -Path "temp_folder" -Filter *.zip | Select-Object -First 1
           Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
@@ -19,7 +18,6 @@ jobs:
       - name: Apply Netplay Fixes
         shell: pwsh
         run: |
-          # فائلوں کو صحیح جگہ منتقل کرنا
           Copy-Item -Path "input_fix.cpp" -Destination "mame-src/src/osd/windows/" -Force
           Copy-Item -Path "net_sync.cpp" -Destination "mame-src/src/osd/windows/" -Force
 
@@ -32,9 +30,9 @@ jobs:
       - name: Compile MAME EXE
         shell: msys2 {0}
         run: |
-          # یہ مرحلہ سب سے زیادہ وقت لے گا
           cd mame-src
-          make -j2
+          # NOWERROR=1 لگانے سے آپ کا یہ حالیہ ایرر حل ہو جائے گا
+          make -j2 NOWERROR=1
 
       - name: Upload Final EXE
         uses: actions/upload-artifact@v4
