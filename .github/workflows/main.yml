@@ -1,8 +1,48 @@
-- name: Manual Bruteforce Link
+name: FinalBruteForce
+on: push
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract
+        shell: powershell
+        run: |
+          Expand-Archive -Path ".github/workflows/mame0139s.zip" -DestinationPath "temp_folder"
+          $innerZip = Get-ChildItem -Path "temp_folder" -Filter *.zip | Select-Object -First 1
+          Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
+          Copy-Item -Path "input_fix.cpp" -Destination "mame-src/src/osd/windows/" -Force
+          Copy-Item -Path "net_sync.cpp" -Destination "mame-src/src/osd/windows/" -Force
+
+      - name: Setup Compiler
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW32
+          install: make mingw-w64-i686-gcc
+
+      - name: Build Core
         shell: msys2 {0}
         run: |
           cd mame-src
-          # ہم اب سسٹم کو کہیں گے کہ ہمیں پرواہ نہیں ایرر کی، بس جوڑ دو
-          g++ -o mame_netplay.exe obj/windows/mametiny/libemu.a obj/windows/mametiny/libcpu.a -lmingw32 -luser32 -lgdi32 -lcomctl32 || true
-          # اب اسے ڈھونڈو
-          find . -name "*.exe"
+          sed -i 's/-lunicows//g' src/osd/windows/windows.mak
+          export CFLAGS="-w -fpermissive"
+          export CXXFLAGS="-w -fpermissive -std=gnu++98"
+          # صرف لائبریریز بنائیں جو نیٹ پلے کے لیے ضروری ہیں
+          make -j2 OSD=windows SUBTARGET=tiny NOWERROR=1 || true
+
+      - name: Grab Artifacts
+        shell: powershell
+        run: |
+          # اب ہم 100KB سے بڑی ہر فائل اٹھائیں گے
+          Get-ChildItem -Path "mame-src" -Recurse | Where-Object { $_.Length -gt 100KB } | Copy-Item -Destination "mame-src/"
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: MAME-Project-Result
+          path: |
+            mame-src/*.exe
+            mame-src/*.a
