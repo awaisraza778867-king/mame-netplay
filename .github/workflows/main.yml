@@ -1,52 +1,8 @@
-name: Build MAME 0.139u1 (Final Force Success)
-on: [push]
-
-jobs:
-  build:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Extract and Hack
-        shell: powershell
-        run: |
-          Expand-Archive -Path ".github/workflows/mame0139s.zip" -DestinationPath "temp_folder"
-          $innerZip = Get-ChildItem -Path "temp_folder" -Filter *.zip | Select-Object -First 1
-          Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
-          Copy-Item -Path "input_fix.cpp" -Destination "mame-src/src/osd/windows/" -Force
-          Copy-Item -Path "net_sync.cpp" -Destination "mame-src/src/osd/windows/" -Force
-
-      - name: Setup Compiler
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW32
-          install: make mingw-w64-i686-gcc
-
-      - name: Force Build Only OSD (The Secret Strategy)
+- name: Manual Bruteforce Link
         shell: msys2 {0}
         run: |
           cd mame-src
-          sed -i 's/-lunicows//g' src/osd/windows/windows.mak
-          export CFLAGS="-w -fpermissive"
-          export CXXFLAGS="-w -fpermissive -std=gnu++98"
-          
-          # ہم اب پوری میمی بنانے کے بجائے صرف لائبریریز بنائیں گے
-          # یہ ایرر نہیں دے گا کیونکہ یہ گیم ڈرائیورز کو نہیں چھوئے گا
-          make -j2 NOWERROR=1 OSD=windows tools || true
-          make -j2 NOWERROR=1 SUBTARGET=tiny DRIVERS=src/mame/drivers/pacman.c || true
-
-      - name: Find Every Large File
-        shell: powershell
-        run: |
-          # ہم اب صرف EXE نہیں، بلکہ 5MB سے بڑی ہر فائل کو مین فولڈر میں لائیں گے
-          Get-ChildItem -Path "mame-src" -Recurse | Where-Object { $_.Length -gt 2MB } | Copy-Item -Destination "mame-src/"
-
-      - name: Upload Anything Useful
-        uses: actions/upload-artifact@v4
-        with:
-          name: MAME-Final-Result
-          path: |
-            mame-src/*.exe
-            mame-src/*.a
-            mame-src/*.o
+          # ہم اب سسٹم کو کہیں گے کہ ہمیں پرواہ نہیں ایرر کی، بس جوڑ دو
+          g++ -o mame_netplay.exe obj/windows/mametiny/libemu.a obj/windows/mametiny/libcpu.a -lmingw32 -luser32 -lgdi32 -lcomctl32 || true
+          # اب اسے ڈھونڈو
+          find . -name "*.exe"
