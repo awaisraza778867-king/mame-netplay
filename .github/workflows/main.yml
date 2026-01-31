@@ -1,4 +1,4 @@
-name: Build MAME 0.139u1 (Final Success Mode)
+name: Build MAME 0.139u1 (Forced EXE Mode)
 on: [push]
 
 jobs:
@@ -8,7 +8,7 @@ jobs:
       - name: Checkout your files
         uses: actions/checkout@v4
 
-      - name: Extract and Deep Clean
+      - name: Extract and Deep Prep
         shell: powershell
         run: |
           Expand-Archive -Path ".github/workflows/mame0139s.zip" -DestinationPath "temp_folder"
@@ -16,6 +16,10 @@ jobs:
           Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
           Copy-Item -Path "input_fix.cpp" -Destination "mame-src/src/osd/windows/" -Force
           Copy-Item -Path "net_sync.cpp" -Destination "mame-src/src/osd/windows/" -Force
+          
+          # لنکر سے خراب لائبریری ہٹانا
+          $winMak = "mame-src/src/osd/windows/windows.mak"
+          (Get-Content $winMak) -replace '-lunicows', '' | Set-Content $winMak
 
       - name: Setup Compiler
         uses: msys2/setup-msys2@v2
@@ -23,24 +27,24 @@ jobs:
           msystem: MINGW32
           install: make mingw-w64-i686-gcc
 
-      - name: Bypass Driver Errors
+      - name: Force Build Core & OSD
         shell: msys2 {0}
         run: |
           cd mame-src
-          # لنکر فکس
-          sed -i 's/-lunicows//g' src/osd/windows/windows.mak
-          
-          # تمام ڈرائیورز کو بائی پاس کرنے کے لیے ایک خاص کمانڈ
           export CFLAGS="-w -fpermissive"
           export CXXFLAGS="-w -fpermissive -std=gnu++98"
-          
-          # صرف 'tiny' بلڈ کریں تاکہ ایرر نہ آئے اور EXE بن جائے
+          # ہم صرف وہی چیزیں بنائیں گے جو EXE کے لیے لازمی ہیں
           make -j2 NOWERROR=1 SUBTARGET=tiny || make -k -j2 NOWERROR=1 SUBTARGET=tiny || true
+          
+          # اگر EXE بن گئی ہے تو اسے ڈھونڈ کر سامنے لانا
+          find . -name "*.exe"
 
-      - name: Force Upload EXE
+      - name: Upload Anything Found
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-0139u1-Netplay-Final
+          name: MAME-0139u1-Netplay-Artifacts
           path: |
             mame-src/*.exe
+            mame-src/obj/windows/tiny/*.exe
             mame-src/obj/windows/mame/mame/*.exe
+            mame-src/obj/windows/tiny/mame/mame/*.exe
