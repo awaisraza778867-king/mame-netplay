@@ -1,19 +1,7 @@
-name: Final Netplay Fix
+name: GetLink
 on: [push]
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Create Work Directory
-        run: |
-          mkdir -p output
-          echo "Netplay system is ready. Please ensure your .cpp files are in the main folder." > output/instruction.txt
-
-      - name: Upload Result
-        uses: actions/upload-artifact@v3
-        with:
-          name: Netplay-Ready-Package
-          path: output/
+      - run: echo "Success"
