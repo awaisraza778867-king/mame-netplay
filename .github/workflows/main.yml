@@ -1,4 +1,4 @@
-name: Get MAME 0.139u1 Netplay
+name: Ultimate MAME Download
 on: [push]
 
 jobs:
@@ -8,22 +8,25 @@ jobs:
       - name: Checkout your files
         uses: actions/checkout@v4
 
-      - name: Download and Package
+      - name: Fetch MAME 0.139u1
         run: |
-          # نیٹ سے سورس ڈاؤن لوڈ کرنا (لینکس کا طریقہ جو بہت تیز ہے)
-          wget https://github.com/mame-dev/mame/archive/refs/tags/mame0139u1.tar.gz
-          tar -xzf mame0139u1.tar.gz
+          # یہ کمانڈ گٹ ہب کے اپنے ڈیٹا بیس سے فائل نکالے گی
+          curl -L https://github.com/mame-dev/mame/archive/refs/tags/mame0139u1.tar.gz -o mame.tar.gz
+          tar -xzf mame.tar.gz
           
-          # آپ کی نیٹ پلے فائلوں کو اندر شامل کرنا
+      - name: Insert Netplay Files
+        run: |
+          # آپ کی دونوں فائلوں کو سورس میں کاپی کرنا
           cp input_fix.cpp mame-mame0139u1/src/osd/windows/
           cp net_sync.cpp mame-mame0139u1/src/osd/windows/
           
-          # فائنل فولڈر تیار کرنا
-          mkdir output
-          mv mame-mame0139u1/* output/
+      - name: Package Everything
+        run: |
+          mkdir -p final_output
+          cp -r mame-mame0139u1/* final_output/
 
-      - name: Upload Final MAME Netplay Source
+      - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-0139u1-Netplay-Ready
-          path: output/
+          name: MAME-0139u1-Netplay-Pack
+          path: final_output/
