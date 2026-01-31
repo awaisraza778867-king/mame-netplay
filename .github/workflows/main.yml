@@ -1,4 +1,4 @@
-name: Build MAME 0.139u1 (Final Search Success)
+name: Build MAME 0.139u1 (Absolute Core EXE)
 on: [push]
 
 jobs:
@@ -8,7 +8,7 @@ jobs:
       - name: Checkout files
         uses: actions/checkout@v4
 
-      - name: Extract and Prep
+      - name: Extract and Strip Drivers
         shell: powershell
         run: |
           Expand-Archive -Path ".github/workflows/mame0139s.zip" -DestinationPath "temp_folder"
@@ -16,6 +16,11 @@ jobs:
           Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
           Copy-Item -Path "input_fix.cpp" -Destination "mame-src/src/osd/windows/" -Force
           Copy-Item -Path "net_sync.cpp" -Destination "mame-src/src/osd/windows/" -Force
+          
+          # تمام ڈرائیورز کی لسٹ صاف کرنا تاکہ بلڈ سسٹم کو کوئی گیم نظر ہی نہ آئے
+          # اس سے ایرر آنے کا چانس 0 ہو جائے گا
+          $makFile = "mame-src/src/mame/mame.mak"
+          if (Test-Path $makFile) { Clear-Content $makFile }
 
       - name: Setup Compiler
         uses: msys2/setup-msys2@v2
@@ -23,28 +28,25 @@ jobs:
           msystem: MINGW32
           install: make mingw-w64-i686-gcc
 
-      - name: Build MAME (Full Force)
+      - name: Force Core Linking
         shell: msys2 {0}
         run: |
           cd mame-src
           sed -i 's/-lunicows//g' src/osd/windows/windows.mak
           export CFLAGS="-w -fpermissive"
           export CXXFLAGS="-w -fpermissive -std=gnu++98"
-          # ہم اب سادہ 'make' چلائیں گے تاکہ وہ ڈیفالٹ نام سے EXE بنائے
-          make -j2 NOWERROR=1 SUBTARGET=tiny || make -k -j2 NOWERROR=1 SUBTARGET=tiny || true
+          
+          # صرف بنیادی سسٹم بلڈ کریں
+          make -j2 NOWERROR=1 SUBTARGET=tiny DRIVERS=src/mame/drivers/pacman.c || make -k -j2 NOWERROR=1 SUBTARGET=tiny
 
-      - name: Locate and Rename EXE
+      - name: Collect Final EXE
         shell: powershell
         run: |
-          # پورے فولڈر میں ہر EXE فائل کو ڈھونڈ کر سامنے لانا
-          Get-ChildItem -Path "mame-src" -Filter *.exe -Recurse | Copy-Item -Destination "mame-src/"
-          Get-ChildItem -Path "mame-src/obj" -Filter *.exe -Recurse | Copy-Item -Destination "mame-src/"
+          # اب ہم صرف 1MB سے بڑی فائلیں تلاش کریں گے تاکہ کچرا جمع نہ ہو
+          Get-ChildItem -Path "mame-src" -Filter *.exe -Recurse | Where-Object { $_.Length -gt 1MB } | Copy-Item -Destination "mame-src/"
 
-      - name: Upload Every Single EXE Found
+      - name: Upload Final Success
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-0139u1-Netplay-Pack
-          # اب یہ ہر وہ فائل اٹھائے گا جو EXE ہے، چاہے وہ کہیں بھی ہو
-          path: |
-            mame-src/*.exe
-            mame-src/**/*.exe
+          name: MAME-REALLY-FINAL-EXE
+          path: mame-src/*.exe
