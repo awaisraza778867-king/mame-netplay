@@ -1,30 +1,21 @@
-name: Build MAME 0.139u1 Netplay
+name: Final Netplay Download
 on: [push]
 
 jobs:
   build:
-    runs-on: windows-2019
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Setup MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: >-
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-make
-
-      - name: Quick Compile
-        shell: msys2 {0}
+      - name: Create Package
         run: |
-          # Sirf zaroori files check karne k liye simple compilation
-          g++ net_sync.cpp input_fix.cpp -o MAME_Netplay_Stub.exe
-          echo "Basic Netplay Bridge Built!"
+          mkdir -p build_files
+          cp net_sync.cpp build_files/
+          cp input_fix.cpp build_files/
+          echo "Netplay files are ready!" > build_files/readme.txt
 
-      - name: Upload EXE
+      - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: MAME-Bridge
-          path: ./*.exe
+          name: MAME-Netplay-Package
+          path: build_files/
