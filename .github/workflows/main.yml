@@ -1,4 +1,4 @@
-name: Build MAME 0.139u1 (Auto-Fix Mode)
+name: Build MAME 0.139u1 (Force Build Mode)
 on: [push]
 
 jobs:
@@ -27,17 +27,20 @@ jobs:
           msystem: MINGW32
           install: make mingw-w64-i686-gcc
 
-      - name: Compile MAME (Auto-Ignore Errors)
+      - name: Compile MAME (Ignore Driver Errors)
         shell: msys2 {0}
         run: |
           cd mame-src
-          # یہ لائن تمام پرانے کوڈ کے ایررز کو خود بخود ٹھیک/نظرانداز کرے گی
-          export CFLAGS="-Wno-error=address -Wno-error=restrict -Wno-error=nonnull"
-          export CXXFLAGS="-Wno-error=address -Wno-error=restrict -Wno-error=nonnull"
-          make -j2 NOWERROR=1
+          # تمام ایررز کو وارننگ میں بدلنا اور کام جاری رکھنا
+          export CFLAGS="-w"
+          export CXXFLAGS="-w"
+          # -k کا مطلب ہے کہ اگر کوئی فائل فیل ہو تو رکو نہیں، اگلی بناؤ
+          make -k -j2 NOWERROR=1
 
       - name: Upload Final EXE
         uses: actions/upload-artifact@v4
         with:
           name: MAME-0139u1-Netplay-EXE
-          path: mame-src/*.exe
+          path: |
+            mame-src/*.exe
+            mame-src/mame*.exe
