@@ -1,9 +1,9 @@
-name: Auto Build MAME Netplay
+name: Build MAME 0.139u1 Netplay
 on: [push]
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout your files
         uses: actions/checkout@v4
@@ -11,27 +11,19 @@ jobs:
       - name: Download MAME 0.139u1 Source
         shell: powershell
         run: |
-          # محفوظ طریقے سے فائل ڈاؤن لوڈ کرنا
-          Invoke-WebRequest -Uri "https://github.com/mame-dev/mame/archive/refs/tags/mame0139u1.zip" -OutFile "mame_source.zip"
-          Expand-Archive -Path "mame_source.zip" -DestinationPath "."
+          $url = "https://github.com/mame-dev/mame/archive/refs/tags/mame0139u1.zip"
+          Invoke-WebRequest -Uri $url -OutFile "source.zip"
+          Expand-Archive -Path "source.zip" -DestinationPath "mame-src"
 
-      - name: Integrate your Netplay Files
+      - name: Replace Files for Netplay
         shell: powershell
         run: |
-          # آپ کی فائلوں کو سورس کوڈ میں ڈالنا
-          Copy-Item "input_fix.cpp" -Destination "mame-mame0139u1/src/osd/windows/" -Force
-          Copy-Item "net_sync.cpp" -Destination "mame-mame0139u1/src/osd/windows/" -Force
+          # آپ کی ان 2 فائلوں کو صحیح فولڈر میں ڈالنا
+          Copy-Item "input_fix.cpp" -Destination "mame-src/mame-mame0139u1/src/osd/windows/" -Force
+          Copy-Item "net_sync.cpp" -Destination "mame-src/mame-mame0139u1/src/osd/windows/" -Force
 
-      - name: Build MAME EXE
-        shell: cmd
-        run: |
-          cd mame-mame0139u1
-          echo Starting Compilation...
-          # یہاں ہم صرف ٹیسٹ کریں گے کہ فائلیں صحیح جگہ پر ہیں
-          dir src\osd\windows\*.cpp
-
-      - name: Upload Finished Files
+      - name: Final Package Download
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-Netplay-Build
-          path: mame-mame0139u1/src/osd/windows/
+          name: MAME-0139u1-Netplay-Source
+          path: mame-src/
