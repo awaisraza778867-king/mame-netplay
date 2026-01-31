@@ -1,4 +1,4 @@
-name: Build MAME 0.139u1 (Zip Path Fixed)
+name: Build MAME 0.139u1 (Final Path Fix)
 on: [push]
 
 jobs:
@@ -11,21 +11,22 @@ jobs:
       - name: Extract Outer Zip
         shell: powershell
         run: |
-          # چونکہ فائل .github/workflows میں ہے، ہم نے یہاں راستہ ٹھیک کر دیا ہے
+          # آپ کی فائل یہاں پڑی ہے، ہم اسے کھول رہے ہیں
           Expand-Archive -Path ".github/workflows/mame0139s.zip" -DestinationPath "temp_folder"
 
       - name: Extract Inner Zip
         shell: powershell
         run: |
-          # اب اس کے اندر سے اصلی سورس کوڈ والی زپ نکالنا
+          # اندرونی زپ کو نکالنا
           $innerZip = Get-ChildItem -Path "temp_folder" -Filter *.zip | Select-Object -First 1
           Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
 
       - name: Integrate Netplay Files
+        shell: pwsh
         run: |
-          # اب آپ کی نیٹ پلے فائلوں کو سورس میں ڈالنا
-          copy /y input_fix.cpp mame-src\src\osd\windows\
-          copy /y net_sync.cpp mame-src\src\osd\windows\
+          # فائلیں کاپی کرنے کا پکا طریقہ (راستوں کے ساتھ)
+          Copy-Item -Path "input_fix.cpp" -Destination "mame-src/src/osd/windows/" -Force
+          Copy-Item -Path "net_sync.cpp" -Destination "mame-src/src/osd/windows/" -Force
 
       - name: Upload Ready Source
         uses: actions/upload-artifact@v4
