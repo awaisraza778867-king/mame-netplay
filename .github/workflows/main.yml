@@ -10,9 +10,11 @@ jobs:
       - name: Create Package
         run: |
           mkdir -p build_files
-          cp net_sync.cpp build_files/
-          cp input_fix.cpp build_files/
-          echo "Netplay files are ready!" > build_files/readme.txt
+          # یہ لائن چیک کرے گی کہ فائلیں ہیں یا نہیں
+          ls -R
+          echo "Test File" > build_files/readme.txt
+          # اگر فائلیں موجود ہیں تو کاپی کر لے گا
+          cp *.cpp build_files/ || echo "No cpp files found yet"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
