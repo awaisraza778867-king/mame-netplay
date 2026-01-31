@@ -1,24 +1,32 @@
-name: Build MAME Netplay EXE
+name: Auto Build MAME Netplay
 on: [push]
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout your files
+        uses: actions/checkout@v4
 
-      - name: Setup Compilation Tools
+      - name: Download MAME 0.139u1 Source
         run: |
-          echo "Installing Compiler..."
-          # یہاں ہم گٹ ہب کو ٹولز انسٹال کرنے کا حکم دے رہے ہیں
+          curl -L -o mame_source.zip https://github.com/mame-dev/mame/archive/refs/tags/mame0139u1.zip
+          tar -xf mame_source.zip
 
-      - name: Compiling MAME
+      - name: Integrate your Netplay Files
         run: |
-          echo "Starting Build Process... This may take time."
-          # یہاں وہ کمانڈ آئے گی جو آپ کی بدلی ہوئی فائلوں کے ساتھ EXE بنائے گی
-          
-      - name: Upload Finished EXE
+          # آپ کی اپ لوڈ کی ہوئی فائلوں کو سورس کوڈ کے صحیح فولڈر میں منتقل کرنا
+          cp input_fix.cpp mame-mame0139u1/src/osd/windows/
+          cp net_sync.cpp mame-mame0139u1/src/osd/windows/
+
+      - name: Compile MAME (This will take time)
+        run: |
+          cd mame-mame0139u1
+          # یہاں کمپائل کرنے کی کمانڈ چلے گی
+          make -j2
+
+      - name: Upload Final EXE
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-Netplay-Executable
-          path: "**/*.exe"
+          name: MAME-Netplay-Final-EXE
+          path: mame-mame0139u1/*.exe
