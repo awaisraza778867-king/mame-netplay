@@ -1,4 +1,4 @@
-name: Final MAME Netplay Build
+name: MAME 0.139u1 Netplay Pack
 on: [push]
 
 jobs:
@@ -8,24 +8,24 @@ jobs:
       - name: Checkout your files
         uses: actions/checkout@v4
 
-      - name: Get MAME 0.139u1 Source
+      - name: Download MAME Source
         run: |
-          # آفیشل سورس سے فائلیں نکالنا
-          git clone --depth 1 --branch mame0139u1 https://github.com/mame-dev/mame.git temp_mame
-          
+          # آفیشل مرر سے سورس ڈاؤن لوڈ کرنا
+          curl -L https://archive.org/download/mame0139u1_source/mame0139u1.zip -o mame.zip
+          unzip mame.zip -d mame-source
+
       - name: Insert Netplay Files
         run: |
           # آپ کی دونوں فائلوں کو سورس میں صحیح جگہ پہنچانا
-          cp input_fix.cpp temp_mame/src/osd/windows/
-          cp net_sync.cpp temp_mame/src/osd/windows/
+          cp input_fix.cpp mame-source/src/osd/windows/
+          cp net_sync.cpp mame-source/src/osd/windows/
 
-      - name: Create Package
+      - name: Create Final Zip
         run: |
-          mkdir output
-          mv temp_mame/* output/
+          zip -r MAME_0139u1_Netplay_Ready.zip mame-source/
 
       - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-0139u1-Netplay-Ready
-          path: output/
+          name: MAME-0139u1-Full-Package
+          path: MAME_0139u1_Netplay_Ready.zip
