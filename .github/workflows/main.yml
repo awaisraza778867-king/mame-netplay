@@ -1,29 +1,29 @@
-name: Build MAME 0.139u1 Netplay
+name: Get MAME 0.139u1 Netplay
 on: [push]
 
 jobs:
   build:
-    runs-on: windows-2019
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout your files
         uses: actions/checkout@v4
 
-      - name: Download MAME 0.139u1 Source
-        shell: powershell
+      - name: Download and Package
         run: |
-          $url = "https://github.com/mame-dev/mame/archive/refs/tags/mame0139u1.zip"
-          Invoke-WebRequest -Uri $url -OutFile "source.zip"
-          Expand-Archive -Path "source.zip" -DestinationPath "mame-src"
+          # نیٹ سے سورس ڈاؤن لوڈ کرنا (لینکس کا طریقہ جو بہت تیز ہے)
+          wget https://github.com/mame-dev/mame/archive/refs/tags/mame0139u1.tar.gz
+          tar -xzf mame0139u1.tar.gz
+          
+          # آپ کی نیٹ پلے فائلوں کو اندر شامل کرنا
+          cp input_fix.cpp mame-mame0139u1/src/osd/windows/
+          cp net_sync.cpp mame-mame0139u1/src/osd/windows/
+          
+          # فائنل فولڈر تیار کرنا
+          mkdir output
+          mv mame-mame0139u1/* output/
 
-      - name: Replace Files for Netplay
-        shell: powershell
-        run: |
-          # آپ کی ان 2 فائلوں کو صحیح فولڈر میں ڈالنا
-          Copy-Item "input_fix.cpp" -Destination "mame-src/mame-mame0139u1/src/osd/windows/" -Force
-          Copy-Item "net_sync.cpp" -Destination "mame-src/mame-mame0139u1/src/osd/windows/" -Force
-
-      - name: Final Package Download
+      - name: Upload Final MAME Netplay Source
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-0139u1-Netplay-Source
-          path: mame-src/
+          name: MAME-0139u1-Netplay-Ready
+          path: output/
