@@ -1,7 +1,21 @@
-name: GetLink
+name: Download Netplay Files
 on: [push]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Success"
+      - uses: actions/checkout@v3
+
+      - name: Create Package
+        run: |
+          mkdir -p output
+          # آپ کی اپ لوڈ کی ہوئی فائلوں کو یہاں کاپی کیا جا رہا ہے
+          cp *.cpp output/ 2>/dev/null || echo "No files found"
+          echo "MAME 0.139u1 Netplay Ready" > output/status.txt
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: MAME-Netplay-Package
+          path: output/
