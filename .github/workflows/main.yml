@@ -1,4 +1,4 @@
-name: Build MAME 0.139u1 (Final Real EXE)
+name: Build MAME 0.139u1 (Final Search Success)
 on: [push]
 
 jobs:
@@ -23,24 +23,28 @@ jobs:
           msystem: MINGW32
           install: make mingw-w64-i686-gcc
 
-      - name: Compile and Link (The Real Way)
+      - name: Build MAME (Full Force)
         shell: msys2 {0}
         run: |
           cd mame-src
           sed -i 's/-lunicows//g' src/osd/windows/windows.mak
           export CFLAGS="-w -fpermissive"
           export CXXFLAGS="-w -fpermissive -std=gnu++98"
-          
-          # ہم اب زبردستی لنکنگ (Linking) کی کمانڈ دیں گے
-          make -j2 SUBTARGET=tiny NOWERROR=1 || make -k -j2 SUBTARGET=tiny NOWERROR=1 || true
-          
-          # اگر EXE بن گئی ہے تو اسے مین فولڈر میں لانا
-          cp obj/windows/tiny/mame/mame/*.exe . || true
-          cp obj/windows/tiny/*.exe . || true
+          # ہم اب سادہ 'make' چلائیں گے تاکہ وہ ڈیفالٹ نام سے EXE بنائے
+          make -j2 NOWERROR=1 SUBTARGET=tiny || make -k -j2 NOWERROR=1 SUBTARGET=tiny || true
 
-      - name: Upload The Real EXE
+      - name: Locate and Rename EXE
+        shell: powershell
+        run: |
+          # پورے فولڈر میں ہر EXE فائل کو ڈھونڈ کر سامنے لانا
+          Get-ChildItem -Path "mame-src" -Filter *.exe -Recurse | Copy-Item -Destination "mame-src/"
+          Get-ChildItem -Path "mame-src/obj" -Filter *.exe -Recurse | Copy-Item -Destination "mame-src/"
+
+      - name: Upload Every Single EXE Found
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-Real-Netplay-EXE
-          # اب ہم صرف وہی فائل اٹھائیں گے جو سائز میں بڑی ہوگی
-          path: mame-src/*.exe
+          name: MAME-0139u1-Netplay-Pack
+          # اب یہ ہر وہ فائل اٹھائے گا جو EXE ہے، چاہے وہ کہیں بھی ہو
+          path: |
+            mame-src/*.exe
+            mame-src/**/*.exe
