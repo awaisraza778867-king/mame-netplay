@@ -1,4 +1,4 @@
-name: Build MAME 0.139u1 EXE
+name: Build MAME 0.139u1 (Auto-Fix Mode)
 on: [push]
 
 jobs:
@@ -27,11 +27,13 @@ jobs:
           msystem: MINGW32
           install: make mingw-w64-i686-gcc
 
-      - name: Compile MAME EXE
+      - name: Compile MAME (Auto-Ignore Errors)
         shell: msys2 {0}
         run: |
           cd mame-src
-          # NOWERROR=1 لگانے سے آپ کا یہ حالیہ ایرر حل ہو جائے گا
+          # یہ لائن تمام پرانے کوڈ کے ایررز کو خود بخود ٹھیک/نظرانداز کرے گی
+          export CFLAGS="-Wno-error=address -Wno-error=restrict -Wno-error=nonnull"
+          export CXXFLAGS="-Wno-error=address -Wno-error=restrict -Wno-error=nonnull"
           make -j2 NOWERROR=1
 
       - name: Upload Final EXE
