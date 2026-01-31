@@ -1,4 +1,4 @@
-name: Build MAME 0.139u1 (Fast & Final)
+name: Build MAME 0.139u1 (Final EXE Fix)
 on: [push]
 
 jobs:
@@ -8,30 +8,18 @@ jobs:
       - name: Checkout your files
         uses: actions/checkout@v4
 
-      - name: Setup Cache
-        uses: actions/cache@v4
-        with:
-          path: mame-src/obj
-          key: ${{ runner.os }}-mame-build-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-mame-build-
-
-      - name: Extract and Prep
+      - name: Extract and Force Setup
         shell: powershell
         run: |
-          if (!(Test-Path "mame-src")) {
-            Expand-Archive -Path ".github/workflows/mame0139s.zip" -DestinationPath "temp_folder"
-            $innerZip = Get-ChildItem -Path "temp_folder" -Filter *.zip | Select-Object -First 1
-            Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
-            Copy-Item -Path "input_fix.cpp" -Destination "mame-src/src/osd/windows/" -Force
-            Copy-Item -Path "net_sync.cpp" -Destination "mame-src/src/osd/windows/" -Force
-          }
-          # خراب فائل کو ختم کرنا تاکہ بلڈ وہیں سے آگے بڑھ جائے
-          $badFile = "mame-src/src/mame/drivers/albazg.c"
-          if (Test-Path $badFile) { echo "" > $badFile }
+          Expand-Archive -Path ".github/workflows/mame0139s.zip" -DestinationPath "temp_folder"
+          $innerZip = Get-ChildItem -Path "temp_folder" -Filter *.zip | Select-Object -First 1
+          Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
+          Copy-Item -Path "input_fix.cpp" -Destination "mame-src/src/osd/windows/" -Force
+          Copy-Item -Path "net_sync.cpp" -Destination "mame-src/src/osd/windows/" -Force
           
-          $winMak = "mame-src/src/osd/windows/windows.mak"
-          (Get-Content $winMak) -replace '-lunicows', '' | Set-Content $winMak
+          # ان فائلوں کو مکمل طور پر ڈیلیٹ کرنا تاکہ وہ لنک ہی نہ ہوں
+          Remove-Item "mame-src/src/mame/drivers/albazg.c" -ErrorAction SilentlyContinue
+          Remove-Item "mame-src/src/mame/drivers/kaneko16.c" -ErrorAction SilentlyContinue
 
       - name: Setup Compiler
         uses: msys2/setup-msys2@v2
@@ -39,18 +27,25 @@ jobs:
           msystem: MINGW32
           install: make mingw-w64-i686-gcc
 
-      - name: Compile MAME (Resume and Force)
+      - name: Hard Fix and Compile
         shell: msys2 {0}
         run: |
           cd mame-src
+          # لنکر سے خراب لائبریری ہٹانا
+          sed -i 's/-lunicows//g' src/osd/windows/windows.mak
+          
+          # ڈرائیور لسٹ سے ان کے نام نکالنا تاکہ لنکنگ فیل نہ ہو
+          sed -i '/albazg/d' src/mame/mame.mak
+          sed -i '/kaneko16/d' src/mame/mame.mak
+          
           export CFLAGS="-w -fpermissive"
           export CXXFLAGS="-w -fpermissive -std=gnu++98"
-          make -k -j2 NOWERROR=1 SUBTARGET=mame || true
+          
+          # اب یہ بغیر رکے چلے گا اور EXE بنائے گا
+          make -j2 NOWERROR=1 SUBTARGET=mame
 
       - name: Upload Final EXE
         uses: actions/upload-artifact@v4
         with:
           name: MAME-0139u1-Netplay-Final
-          path: |
-            mame-src/*.exe
-            mame-src/mame*.exe
+          path: mame-src/*.exe
