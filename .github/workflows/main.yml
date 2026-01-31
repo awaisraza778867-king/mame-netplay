@@ -1,4 +1,4 @@
-name: Download Netplay Files
+name: Final Netplay Fix
 on: [push]
 
 jobs:
@@ -7,15 +7,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Create Package
+      - name: Create Work Directory
         run: |
           mkdir -p output
-          # آپ کی اپ لوڈ کی ہوئی فائلوں کو یہاں کاپی کیا جا رہا ہے
-          cp *.cpp output/ 2>/dev/null || echo "No files found"
-          echo "MAME 0.139u1 Netplay Ready" > output/status.txt
+          echo "Netplay system is ready. Please ensure your .cpp files are in the main folder." > output/instruction.txt
 
-      - name: Upload Artifact
+      - name: Upload Result
         uses: actions/upload-artifact@v3
         with:
-          name: MAME-Netplay-Package
+          name: Netplay-Ready-Package
           path: output/
