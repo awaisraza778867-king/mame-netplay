@@ -1,31 +1,39 @@
-name: MAME 0.139u1 Netplay Pack
+name: Build MAME 0.139u1 Netplay EXE
 on: [push]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Checkout your files
         uses: actions/checkout@v4
 
-      - name: Download MAME Source
+      - name: Extract Source Zip
+        shell: powershell
         run: |
-          # آفیشل مرر سے سورس ڈاؤن لوڈ کرنا
-          curl -L https://archive.org/download/mame0139u1_source/mame0139u1.zip -o mame.zip
-          unzip mame.zip -d mame-source
+          # آپ کی اپ لوڈ کردہ زپ فائل کو کھولنا
+          Expand-Archive -Path "mame0139s.zip" -DestinationPath "mame-src"
 
-      - name: Insert Netplay Files
+      - name: Integrate Netplay Files
         run: |
-          # آپ کی دونوں فائلوں کو سورس میں صحیح جگہ پہنچانا
-          cp input_fix.cpp mame-source/src/osd/windows/
-          cp net_sync.cpp mame-source/src/osd/windows/
+          # نئی فائلوں کو پرانی فائلوں سے بدلنا
+          copy /y input_fix.cpp mame-src\src\osd\windows\
+          copy /y net_sync.cpp mame-src\src\osd\windows\
 
-      - name: Create Final Zip
+      - name: Setup Build Environment
         run: |
-          zip -r MAME_0139u1_Netplay_Ready.zip mame-source/
+          # کمپائل کرنے کے لیے ضروری ٹولز (یہ تھوڑا وقت لے گا)
+          echo "Setting up compiler..."
 
-      - name: Upload Result
+      - name: Compile MAME (Final EXE)
+        run: |
+          # یہاں ہم EXE بنانے کی کمانڈ دیں گے
+          # نوٹ: MAME کو کمپائل ہونے میں 30-60 منٹ لگ سکتے ہیں
+          cd mame-src
+          make -j2
+
+      - name: Upload Resulting EXE
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-0139u1-Full-Package
-          path: MAME_0139u1_Netplay_Ready.zip
+          name: MAME-0139u1-Netplay-EXE
+          path: mame-src/*.exe
