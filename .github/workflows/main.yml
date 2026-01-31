@@ -1,4 +1,4 @@
-name: Ultimate MAME Download
+name: Final MAME Netplay Build
 on: [push]
 
 jobs:
@@ -8,25 +8,24 @@ jobs:
       - name: Checkout your files
         uses: actions/checkout@v4
 
-      - name: Fetch MAME 0.139u1
+      - name: Get MAME 0.139u1 Source
         run: |
-          # یہ کمانڈ گٹ ہب کے اپنے ڈیٹا بیس سے فائل نکالے گی
-          curl -L https://github.com/mame-dev/mame/archive/refs/tags/mame0139u1.tar.gz -o mame.tar.gz
-          tar -xzf mame.tar.gz
+          # آفیشل سورس سے فائلیں نکالنا
+          git clone --depth 1 --branch mame0139u1 https://github.com/mame-dev/mame.git temp_mame
           
       - name: Insert Netplay Files
         run: |
-          # آپ کی دونوں فائلوں کو سورس میں کاپی کرنا
-          cp input_fix.cpp mame-mame0139u1/src/osd/windows/
-          cp net_sync.cpp mame-mame0139u1/src/osd/windows/
-          
-      - name: Package Everything
+          # آپ کی دونوں فائلوں کو سورس میں صحیح جگہ پہنچانا
+          cp input_fix.cpp temp_mame/src/osd/windows/
+          cp net_sync.cpp temp_mame/src/osd/windows/
+
+      - name: Create Package
         run: |
-          mkdir -p final_output
-          cp -r mame-mame0139u1/* final_output/
+          mkdir output
+          mv temp_mame/* output/
 
       - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-0139u1-Netplay-Pack
-          path: final_output/
+          name: MAME-0139u1-Netplay-Ready
+          path: output/
