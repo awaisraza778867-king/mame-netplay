@@ -1,4 +1,4 @@
-name: Build MAME 0.139u1 (Final Path Fix)
+name: Build MAME 0.139u1 EXE
 on: [push]
 
 jobs:
@@ -8,28 +8,36 @@ jobs:
       - name: Checkout your files
         uses: actions/checkout@v4
 
-      - name: Extract Outer Zip
+      - name: Extract All Zips
         shell: powershell
         run: |
-          # آپ کی فائل یہاں پڑی ہے، ہم اسے کھول رہے ہیں
+          # زپ فائلیں کھولنا
           Expand-Archive -Path ".github/workflows/mame0139s.zip" -DestinationPath "temp_folder"
-
-      - name: Extract Inner Zip
-        shell: powershell
-        run: |
-          # اندرونی زپ کو نکالنا
           $innerZip = Get-ChildItem -Path "temp_folder" -Filter *.zip | Select-Object -First 1
           Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
 
-      - name: Integrate Netplay Files
+      - name: Apply Netplay Fixes
         shell: pwsh
         run: |
-          # فائلیں کاپی کرنے کا پکا طریقہ (راستوں کے ساتھ)
+          # فائلوں کو صحیح جگہ منتقل کرنا
           Copy-Item -Path "input_fix.cpp" -Destination "mame-src/src/osd/windows/" -Force
           Copy-Item -Path "net_sync.cpp" -Destination "mame-src/src/osd/windows/" -Force
 
-      - name: Upload Ready Source
+      - name: Setup Compiler (MSYS2)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW32
+          install: make mingw-w64-i686-gcc
+
+      - name: Compile MAME EXE
+        shell: msys2 {0}
+        run: |
+          # یہ مرحلہ سب سے زیادہ وقت لے گا
+          cd mame-src
+          make -j2
+
+      - name: Upload Final EXE
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-0139u1-Netplay-Ready-Source
-          path: mame-src/
+          name: MAME-0139u1-Netplay-EXE
+          path: mame-src/*.exe
