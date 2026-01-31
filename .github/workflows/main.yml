@@ -1,4 +1,4 @@
-name: Build MAME 0.139u1 Netplay EXE
+name: Build MAME 0.139u1 (Double Zip Fix)
 on: [push]
 
 jobs:
@@ -8,32 +8,27 @@ jobs:
       - name: Checkout your files
         uses: actions/checkout@v4
 
-      - name: Extract Source Zip
+      - name: Extract Outer Zip
         shell: powershell
         run: |
-          # آپ کی اپ لوڈ کردہ زپ فائل کو کھولنا
-          Expand-Archive -Path "mame0139s.zip" -DestinationPath "mame-src"
+          # پہلے باہر والی زپ کھولنا
+          Expand-Archive -Path "mame0139s.zip" -DestinationPath "temp_folder"
+
+      - name: Extract Inner Zip
+        shell: powershell
+        run: |
+          # اب اس کے اندر موجود زپ کو تلاش کر کے کھولنا
+          $innerZip = Get-ChildItem -Path "temp_folder" -Filter *.zip | Select-Object -First 1
+          Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
 
       - name: Integrate Netplay Files
         run: |
-          # نئی فائلوں کو پرانی فائلوں سے بدلنا
+          # اب آپ کی فائلیں صحیح جگہ پر ڈالنا
           copy /y input_fix.cpp mame-src\src\osd\windows\
           copy /y net_sync.cpp mame-src\src\osd\windows\
 
-      - name: Setup Build Environment
-        run: |
-          # کمپائل کرنے کے لیے ضروری ٹولز (یہ تھوڑا وقت لے گا)
-          echo "Setting up compiler..."
-
-      - name: Compile MAME (Final EXE)
-        run: |
-          # یہاں ہم EXE بنانے کی کمانڈ دیں گے
-          # نوٹ: MAME کو کمپائل ہونے میں 30-60 منٹ لگ سکتے ہیں
-          cd mame-src
-          make -j2
-
-      - name: Upload Resulting EXE
+      - name: Upload Verified Source
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-0139u1-Netplay-EXE
-          path: mame-src/*.exe
+          name: MAME-Source-With-Netplay
+          path: mame-src/
