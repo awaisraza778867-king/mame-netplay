@@ -1,4 +1,4 @@
-name: Build MAME 0.139u1 (Force Build Mode)
+name: Build MAME 0.139u1 (Fast Resume Mode)
 on: [push]
 
 jobs:
@@ -8,39 +8,42 @@ jobs:
       - name: Checkout your files
         uses: actions/checkout@v4
 
-      - name: Extract All Zips
+      - name: Setup Cache
+        uses: actions/cache@v4
+        with:
+          path: mame-src/obj
+          key: ${{ runner.os }}-mame-build-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-mame-build-
+
+      - name: Extract Zips (If not cached)
         shell: powershell
         run: |
-          Expand-Archive -Path ".github/workflows/mame0139s.zip" -DestinationPath "temp_folder"
-          $innerZip = Get-ChildItem -Path "temp_folder" -Filter *.zip | Select-Object -First 1
-          Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
+          if (!(Test-Path "mame-src")) {
+            Expand-Archive -Path ".github/workflows/mame0139s.zip" -DestinationPath "temp_folder"
+            $innerZip = Get-ChildItem -Path "temp_folder" -Filter *.zip | Select-Object -First 1
+            Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
+            Copy-Item -Path "input_fix.cpp" -Destination "mame-src/src/osd/windows/" -Force
+            Copy-Item -Path "net_sync.cpp" -Destination "mame-src/src/osd/windows/" -Force
+          }
 
-      - name: Apply Netplay Fixes
-        shell: pwsh
-        run: |
-          Copy-Item -Path "input_fix.cpp" -Destination "mame-src/src/osd/windows/" -Force
-          Copy-Item -Path "net_sync.cpp" -Destination "mame-src/src/osd/windows/" -Force
-
-      - name: Setup Compiler (MSYS2)
+      - name: Setup Compiler
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW32
           install: make mingw-w64-i686-gcc
 
-      - name: Compile MAME (Ignore Driver Errors)
+      - name: Compile MAME (Resume)
         shell: msys2 {0}
         run: |
           cd mame-src
-          # تمام ایررز کو وارننگ میں بدلنا اور کام جاری رکھنا
           export CFLAGS="-w"
           export CXXFLAGS="-w"
-          # -k کا مطلب ہے کہ اگر کوئی فائل فیل ہو تو رکو نہیں، اگلی بناؤ
-          make -k -j2 NOWERROR=1
+          # 'make' خود ہی دیکھے گا کہ کون سی فائلیں بن چکی ہیں
+          make -j2 NOWERROR=1 SUBTARGET=mame
 
       - name: Upload Final EXE
         uses: actions/upload-artifact@v4
         with:
           name: MAME-0139u1-Netplay-EXE
-          path: |
-            mame-src/*.exe
-            mame-src/mame*.exe
+          path: mame-src/*.exe
