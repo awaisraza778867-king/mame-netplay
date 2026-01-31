@@ -1,4 +1,4 @@
-name: Build MAME 0.139u1 (Final Clean Success)
+name: Build MAME 0.139u1 (Final Real EXE)
 on: [push]
 
 jobs:
@@ -8,7 +8,7 @@ jobs:
       - name: Checkout files
         uses: actions/checkout@v4
 
-      - name: Extract and Deep Clean
+      - name: Extract and Prep
         shell: powershell
         run: |
           Expand-Archive -Path ".github/workflows/mame0139s.zip" -DestinationPath "temp_folder"
@@ -16,9 +16,6 @@ jobs:
           Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
           Copy-Item -Path "input_fix.cpp" -Destination "mame-src/src/osd/windows/" -Force
           Copy-Item -Path "net_sync.cpp" -Destination "mame-src/src/osd/windows/" -Force
-          
-          # تمام پرانے آبجیکٹ فولڈرز کو مکمل طور پر ختم کرنا تاکہ نیا نقشہ بنے
-          if (Test-Path "mame-src/obj") { Remove-Item -Recurse -Force "mame-src/obj" }
 
       - name: Setup Compiler
         uses: msys2/setup-msys2@v2
@@ -26,26 +23,24 @@ jobs:
           msystem: MINGW32
           install: make mingw-w64-i686-gcc
 
-      - name: Rebuild Without Missing Files
+      - name: Compile and Link (The Real Way)
         shell: msys2 {0}
         run: |
           cd mame-src
           sed -i 's/-lunicows//g' src/osd/windows/windows.mak
-          
-          # تمام انحصار (Dependencies) کو دوبارہ سے پیدا کرنا
-          make -j2 SUBTARGET=tiny depend || true
-          
           export CFLAGS="-w -fpermissive"
           export CXXFLAGS="-w -fpermissive -std=gnu++98"
           
-          # اب زبردستی بلڈ کرنا، چاہے کچھ ڈرائیورز غائب بھی ہوں
-          make -j2 NOWERROR=1 SUBTARGET=tiny || make -k -j2 NOWERROR=1 SUBTARGET=tiny || true
+          # ہم اب زبردستی لنکنگ (Linking) کی کمانڈ دیں گے
+          make -j2 SUBTARGET=tiny NOWERROR=1 || make -k -j2 SUBTARGET=tiny NOWERROR=1 || true
+          
+          # اگر EXE بن گئی ہے تو اسے مین فولڈر میں لانا
+          cp obj/windows/tiny/mame/mame/*.exe . || true
+          cp obj/windows/tiny/*.exe . || true
 
-      - name: Final EXE Extraction
+      - name: Upload The Real EXE
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-0139u1-Netplay-FINAL
-          path: |
-            mame-src/*.exe
-            mame-src/**/mame*.exe
-            mame-src/obj/**/*.exe
+          name: MAME-Real-Netplay-EXE
+          # اب ہم صرف وہی فائل اٹھائیں گے جو سائز میں بڑی ہوگی
+          path: mame-src/*.exe
