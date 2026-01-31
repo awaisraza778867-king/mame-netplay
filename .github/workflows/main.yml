@@ -10,10 +10,12 @@ jobs:
       - name: Create Work Directory
         run: |
           mkdir -p output
-          echo "Netplay system is ready. Please ensure your .cpp files are in the main folder." > output/instruction.txt
+          echo "Netplay system is ready." > output/instruction.txt
+          # اگر آپ کی فائلیں وہاں موجود ہیں تو یہ انہیں بھی اٹھا لے گا
+          cp *.cpp output/ 2>/dev/null || echo "No cpp files found"
 
       - name: Upload Result
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Netplay-Ready-Package
           path: output/
