@@ -1,4 +1,4 @@
-name: Build MAME 0.139u1 (Double Zip Fix)
+name: Build MAME 0.139u1 (Zip Path Fixed)
 on: [push]
 
 jobs:
@@ -11,24 +11,24 @@ jobs:
       - name: Extract Outer Zip
         shell: powershell
         run: |
-          # پہلے باہر والی زپ کھولنا
-          Expand-Archive -Path "mame0139s.zip" -DestinationPath "temp_folder"
+          # چونکہ فائل .github/workflows میں ہے، ہم نے یہاں راستہ ٹھیک کر دیا ہے
+          Expand-Archive -Path ".github/workflows/mame0139s.zip" -DestinationPath "temp_folder"
 
       - name: Extract Inner Zip
         shell: powershell
         run: |
-          # اب اس کے اندر موجود زپ کو تلاش کر کے کھولنا
+          # اب اس کے اندر سے اصلی سورس کوڈ والی زپ نکالنا
           $innerZip = Get-ChildItem -Path "temp_folder" -Filter *.zip | Select-Object -First 1
           Expand-Archive -Path $innerZip.FullName -DestinationPath "mame-src"
 
       - name: Integrate Netplay Files
         run: |
-          # اب آپ کی فائلیں صحیح جگہ پر ڈالنا
+          # اب آپ کی نیٹ پلے فائلوں کو سورس میں ڈالنا
           copy /y input_fix.cpp mame-src\src\osd\windows\
           copy /y net_sync.cpp mame-src\src\osd\windows\
 
-      - name: Upload Verified Source
+      - name: Upload Ready Source
         uses: actions/upload-artifact@v4
         with:
-          name: MAME-Source-With-Netplay
+          name: MAME-0139u1-Netplay-Ready-Source
           path: mame-src/
